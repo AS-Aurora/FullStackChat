@@ -1,5 +1,6 @@
 from pathlib import Path
 from decouple import config, Csv
+from datetime import timedelta
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -27,6 +28,17 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'corsheaders',
+    'rest_framework',
+    'rest_framework.authtoken',
+    'rest_framework_simplejwt',
+    'rest_framework_simplejwt.token_blacklist',
+    'allauth',
+    'allauth.account',
+    'allauth.socialaccount',
+    'dj-rest-auth',
+    'dj_rest_auth.registration',
+    'django.contrib.sites',
+    'users.apps.UsersConfig',
 ]
 
 MIDDLEWARE = [
@@ -38,6 +50,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'allauth.account.middleware.AccountMiddleware',
 ]
 
 CORS_ALLOW_CREDENTIALS = True
@@ -49,6 +62,10 @@ CORS_ALLOW_CREDENTIALS = True
 # ALLOWED_HOSTS = config('ALLOWED_HOSTS', cast=Csv)
 
 CORS_ALLOW_ORIGINS = config('CORS_ALLOW_ORIGINS', cast=Csv)
+
+SITE_ID = 1
+
+AUTH_USER_MODEL = 'users.CustomUser'
 
 ROOT_URLCONF = 'backend.urls'
 
@@ -121,3 +138,40 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    )
+}
+
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=5),   # Short lifetime for security
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=30),
+    'ROTATE_REFRESH_TOKENS': True,                  # Generates new refresh token on login
+    'BLACKLIST_AFTER_ROTATION': True,
+    'AUTH_HEADER_TYPES': ('Bearer',),
+    'AUTH_TOKEN_CLASSES': ('rest_framework_simplejwt.tokens.AccessToken',),
+    'UPDATE_LAST_LOGIN': True,
+}
+
+ACCOUNT_USER_MODEL_USERNAME_FIELD = "username"
+ACCOUNT_EMAIL_REQUIRED = True
+ACCOUNT_USERNAME_REQUIRED = True
+ACCOUNT_AUTHENTICATION_METHOD = 'email'
+ACCOUNT_EMAIL_VERIFICATION = 'mandatory'
+
+REST_USE_JWT = True
+JWT_AUTH_COOKIE = 'my-app-auth'  # Optional but useful
+JWT_AUTH_REFRESH_COOKIE = 'my-refresh-token'
+
+EMAIL_HOST = 'sandbox.smtp.mailtrap.io'
+EMAIL_HOST_USER = config('EMAIL_HOST_USER')
+EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD')
+EMAIL_PORT = config('EMAIL_PORT', cast=int)
+EMAIL_USE_TLS = True
+DEFAULT_FROM_EMAIL = 'no-reply@fullstackchat.com'
+
+ACCOUNT_ADAPTER = 'users.adapters.CustomAccountAdapter'
+
+FRONTEND_URL = config('FRONTEND_URL')
