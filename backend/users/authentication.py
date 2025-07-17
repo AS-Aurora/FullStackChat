@@ -1,4 +1,3 @@
-# authentication.py
 from rest_framework_simplejwt.authentication import JWTAuthentication
 import logging
 

@@ -7,6 +7,8 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from allauth.account.models import EmailAddress
 from rest_framework.permissions import AllowAny
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.decorators import api_view, permission_classes
+
 
 class LoginView(APIView):
     permission_classes = [AllowAny]
@@ -40,22 +42,22 @@ class LoginView(APIView):
             }
         })
         
-        # Set the JWT cookie that your CustomJWTAuthentication expects
         response.set_cookie(
-            'jwt-auth',  # This matches what your CustomJWTAuthentication looks for
+            'jwt-auth',
             access_token,
-            max_age=60 * 60,  # 1 hour (should match your JWT settings)
+            max_age=60 * 60,
             httponly=True,
             samesite='Lax',
-            secure=False  # Set to True in production with HTTPS
+            secure=False
+        )
+        
+        response.set_cookie(
+            'jwt-refresh-token',
+            str(refresh),
+            max_age=24 * 60 * 60,
+            httponly=True,
+            samesite='Lax',
+            secure=False
         )
         
         return response
-    
-# class HomeView(APIView):
-#     permission_classes = [IsAuthenticated]
-#     def get(self, request):
-#         return Response({
-#             'email': request.user.email,
-#             'username': request.user.username,
-#         })

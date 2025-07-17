@@ -11,26 +11,33 @@ export default function Home() {
   const [errorData, setErrorData] = useState<any>(null);
   const router = useRouter();
 
-  //   useEffect(() => {
-  //   axios
-  //     .get("http://localhost:8000/api/auth/user/", {
-  //       withCredentials: true, // This sends cookies to the backend
-  //     })
-  //     .then((res) => {
-  //       console.log("User data:", res.data);
-  //       setUserData(res.data);
-  //       setLoading(false);
-  //     })
-  //     .catch((err) => {
-  //       setErrorData(err?.response?.data);
-  //       router.push("/login");
-  //     });
-  // }, []);
+    useEffect(() => {
+    axios
+      .get("http://localhost:8000/api/auth/user/", {
+        withCredentials: true, // This sends cookies to the backend
+      })
+      .then((res) => {
+        setUserData(res.data);
+        setLoading(false);
+      })
+      .catch((err) => {
+        setErrorData(err?.response?.data);
+        router.push("/login");
+      });
+  }, []);
   return (
     <div>
-      {/* {loading && <p>Loading...</p>} */}
+      {loading && <p>Loading...</p>}
       {errorData && <p>Error: {errorData.detail}</p>}
-      Hello
+      {userData && (
+        <div>
+          <h1>Welcome, {userData.username}!</h1>
+        </div>
+      )}
+      {!loading && !errorData && !userData && (
+        <p>No user data available.</p>
+      )}
+      <button onClick={() => router.push(`/profile/${userData.pk}`)}>Go to Profile</button>
     </div>
   );
 }

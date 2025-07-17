@@ -21,5 +21,5 @@ export function middleware(request: import('next/server').NextRequest) {
 }
 
 export const config = {
-  matcher: ['/', '/login', '/signup']
+  matcher: ['/', '/login', '/signup', '/profile/:path*']
 }
