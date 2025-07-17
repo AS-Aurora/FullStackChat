@@ -35,10 +35,10 @@ INSTALLED_APPS = [
     'allauth',
     'allauth.account',
     'allauth.socialaccount',
-    'dj-rest-auth',
+    'dj_rest_auth',
     'dj_rest_auth.registration',
     'django.contrib.sites',
-    'users.apps.UsersConfig',
+    'users',
 ]
 
 MIDDLEWARE = [
@@ -53,15 +53,9 @@ MIDDLEWARE = [
     'allauth.account.middleware.AccountMiddleware',
 ]
 
+CORS_ALLOW_ALL_ORIGINS = True
+
 CORS_ALLOW_CREDENTIALS = True
-
-# DEBUG = config('DEBUG', default=True, cast=bool)
-
-# SECRET_KEY = config('SECRET_KEY')
-
-# ALLOWED_HOSTS = config('ALLOWED_HOSTS', cast=Csv)
-
-CORS_ALLOW_ORIGINS = config('CORS_ALLOW_ORIGINS', cast=Csv)
 
 SITE_ID = 1
 
@@ -72,7 +66,7 @@ ROOT_URLCONF = 'backend.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [BASE_DIR / 'templates'],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -141,13 +135,13 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
-        'rest_framework_simplejwt.authentication.JWTAuthentication',
-    )
+        'users.authentication.CustomJWTAuthentication',
+    ),
 }
 
 SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=5),   # Short lifetime for security
-    'REFRESH_TOKEN_LIFETIME': timedelta(days=30),
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=60),   # Short lifetime for security
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
     'ROTATE_REFRESH_TOKENS': True,                  # Generates new refresh token on login
     'BLACKLIST_AFTER_ROTATION': True,
     'AUTH_HEADER_TYPES': ('Bearer',),
@@ -158,12 +152,12 @@ SIMPLE_JWT = {
 ACCOUNT_USER_MODEL_USERNAME_FIELD = "username"
 ACCOUNT_EMAIL_REQUIRED = True
 ACCOUNT_USERNAME_REQUIRED = True
-ACCOUNT_AUTHENTICATION_METHOD = 'email'
+ACCOUNT_AUTHENTICATION_METHOD = 'username'
 ACCOUNT_EMAIL_VERIFICATION = 'mandatory'
 
 REST_USE_JWT = True
-JWT_AUTH_COOKIE = 'my-app-auth'  # Optional but useful
-JWT_AUTH_REFRESH_COOKIE = 'my-refresh-token'
+JWT_AUTH_COOKIE = 'users-auth'
+JWT_AUTH_REFRESH_COOKIE = 'users-refresh-token'
 
 EMAIL_HOST = 'sandbox.smtp.mailtrap.io'
 EMAIL_HOST_USER = config('EMAIL_HOST_USER')
@@ -175,3 +169,12 @@ DEFAULT_FROM_EMAIL = 'no-reply@fullstackchat.com'
 ACCOUNT_ADAPTER = 'users.adapters.CustomAccountAdapter'
 
 FRONTEND_URL = config('FRONTEND_URL')
+
+REST_AUTH_REGISTRATION_SERIALIZERS = {
+    'REGISTER_SERIALIZER': 'users.serializers.CustomRegisterSerializer',
+}
+
+REST_AUTH_SERIALIZERS = {
+    'LOGIN_SERIALIZER': 'users.serializers.CustomLoginSerializer',
+    'JWT_SERIALIZER': 'dj_rest_auth.serializers.JWTSerializer',
+}

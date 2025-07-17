@@ -1,5 +1,61 @@
 from django.shortcuts import render
-from django.http import JsonResponse as JSONResponse
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework import status
+from django.contrib.auth import authenticate
+from rest_framework_simplejwt.tokens import RefreshToken
+from allauth.account.models import EmailAddress
+from rest_framework.permissions import AllowAny
+from rest_framework.permissions import IsAuthenticated
 
-def ping(request):
-    return JSONResponse({"message": "pong"})
+class LoginView(APIView):
+    permission_classes = [AllowAny]
+    
+    def post(self, request):
+        username = request.data.get('username')
+        password = request.data.get('password')
+
+        if not username or not password:
+            return Response({'detail': 'Username and password required'}, status=status.HTTP_400_BAD_REQUEST)
+
+        user = authenticate(request, username=username, password=password)
+
+        if user is None or not user.is_active:
+            return Response({'detail': 'Invalid credentials'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        if not EmailAddress.objects.filter(user=user, verified=True).exists():
+            return Response({'detail': 'Email address is not verified'}, status=status.HTTP_400_BAD_REQUEST)
+
+        refresh = RefreshToken.for_user(user)
+        access_token = str(refresh.access_token)
+
+        response = Response({
+            'refresh': str(refresh),
+            'access': access_token,
+            'message': 'Login successful',
+            'user': {
+                'id': user.id,
+                'username': user.username,
+                'email': user.email,
+            }
+        })
+        
+        # Set the JWT cookie that your CustomJWTAuthentication expects
+        response.set_cookie(
+            'jwt-auth',  # This matches what your CustomJWTAuthentication looks for
+            access_token,
+            max_age=60 * 60,  # 1 hour (should match your JWT settings)
+            httponly=True,
+            samesite='Lax',
+            secure=False  # Set to True in production with HTTPS
+        )
+        
+        return response
+    
+# class HomeView(APIView):
+#     permission_classes = [IsAuthenticated]
+#     def get(self, request):
+#         return Response({
+#             'email': request.user.email,
+#             'username': request.user.username,
+#         })
