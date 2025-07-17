@@ -8,6 +8,7 @@ from allauth.account.models import EmailAddress
 from rest_framework.permissions import AllowAny
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.decorators import api_view, permission_classes
+from rest_framework_simplejwt.exceptions import TokenError
 
 
 class LoginView(APIView):
@@ -60,4 +61,13 @@ class LoginView(APIView):
             secure=False
         )
         
+        return response
+
+class LogoutView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        response = Response({"detail": "Successfully logged out."}, status=200)
+        response.delete_cookie('jwt-auth')
+        response.delete_cookie('jwt-refresh-token')
         return response

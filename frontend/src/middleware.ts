@@ -4,10 +4,6 @@ export function middleware(request: import('next/server').NextRequest) {
   const token = request.cookies.get('jwt-auth')
   const { pathname } = request.nextUrl
 
-    console.log('Path:', pathname)
-  console.log('Token exists:', !!token)
-  console.log('Token value:', token?.value)
-
     const publicRoutes = ['/login', '/signup', '/verify-email']
   const isPublicRoute = publicRoutes.includes(pathname)
 
