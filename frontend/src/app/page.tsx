@@ -32,8 +32,15 @@ export default function Home() {
     const socket = new WebSocket("ws://localhost:8000/ws/chat/");
     socket.onmessage = (e) => {
       const data = JSON.parse(e.data);
-      setMessages((prevMessages) => [...prevMessages, data]);
+      const message = {
+        id: data.uuid,
+        user: data.username,
+        text: data.message,
+        timestamp: data.timestamp,
+      };
+      setMessages((prev) => [...prev, message]);
     };
+
     setSocket(socket);
 
     return () => {
@@ -56,7 +63,9 @@ export default function Home() {
         <h1 className="text-2xl font-bold mb-2 text-center text-gray-800">
           {loading ? "Loading..." : `Welcome, ${userData?.username || "User"}!`}
         </h1>
-        <p className="text-center text-gray-600 mb-4">This is your protected home page.</p>
+        <p className="text-center text-gray-600 mb-4">
+          This is your protected home page.
+        </p>
 
         {errorData && (
           <div className="mb-4 p-4 bg-red-100 text-red-800 rounded-md">
@@ -76,10 +85,12 @@ export default function Home() {
         <div className="mb-4 max-h-40 overflow-y-auto space-y-2">
           {messages.map((msg, idx) => (
             <div
-              key={idx}
+              key={msg.id}
               className="bg-gray-100 border border-gray-300 rounded p-2 text-sm text-gray-800"
             >
-              {msg.message}
+              <div className="font-semibold text-blue-700">{msg.user}</div>
+              <div>{msg.text}</div>
+              <div className="text-xs text-gray-500">{msg.timestamp}</div>
             </div>
           ))}
         </div>
