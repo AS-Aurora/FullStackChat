@@ -38,7 +38,9 @@ INSTALLED_APPS = [
     'dj_rest_auth',
     'dj_rest_auth.registration',
     'django.contrib.sites',
+    'channels',
     'users',
+    'chat',
 ]
 
 MIDDLEWARE = [
@@ -178,3 +180,14 @@ REST_AUTH_SERIALIZERS = {
     'LOGIN_SERIALIZER': 'users.serializers.CustomLoginSerializer',
     'JWT_SERIALIZER': 'dj_rest_auth.serializers.JWTSerializer',
 }
+
+CHANNEL_LAYERS = {
+    'default': {
+        'BACKEND': 'channels_redis.core.RedisChannelLayer',
+        'CONFIG': {
+            "hosts": [('127.0.0.1', 6379)],
+        },
+    },
+}
+
+ASGI_APPLICATION = 'backend.asgi.application'
