@@ -77,6 +77,14 @@ class ChatConsumer(AsyncWebsocketConsumer):
                 sender=user,
                 parent=parent_message
             )
+
+            parent_data = None
+            if parent_message:
+                parent_data = {
+                    'id': str(parent_message.id),
+                    'content': parent_message.content,
+                    'sender': parent_message.sender.username
+                }
             
             await self.channel_layer.group_send(
                 self.room_group_name,
@@ -86,7 +94,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
                     'username': user.username,
                     'timestamp': str(msg_obj.timestamp),
                     'uuid': str(msg_obj.id),
-                    'parent_id': str(parent_message.id) if parent_message else None
+                    'parent': parent_data
                 }
             ) # Send message to room group
             
@@ -101,7 +109,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
             'username': event['username'],
             'timestamp': event['timestamp'],
             'uuid': event['uuid'],
-            'parent_id': event.get('parent_id')
+            'parent': event.get('parent')
         })) # Send message to WebSocket
 
     async def online_users(self, event):
