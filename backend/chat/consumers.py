@@ -5,6 +5,7 @@ from chat.models import Room, Message
 from django.contrib.auth.models import AnonymousUser
 import json
 import logging
+from django.core.cache import cache
 
 logger = logging.getLogger(__name__)
 
@@ -29,9 +30,13 @@ class ChatConsumer(AsyncWebsocketConsumer):
                 self.room_group_name,
                 self.channel_name
             ) # Join room group
+
+            await self.add_online_user() # Add user to online users
             
             await self.accept()
             logger.info(f"User {self.user.username} connected to room {self.room.name}")
+
+            await self.broadcast_online_users() # Broadcast online users in the room
             
         except Exception as e:
             logger.error(f"Error connecting to room: {e}")
@@ -39,12 +44,16 @@ class ChatConsumer(AsyncWebsocketConsumer):
     
     async def disconnect(self, close_code):
         if hasattr(self, 'room_group_name'):
+            await self.remove_online_user() # Remove user from online users
+
             await self.channel_layer.group_discard(
                 self.room_group_name,
                 self.channel_name
             )
+            await self.broadcast_online_users() # Broadcast updated online users
+
         logger.info(f"User {getattr(self.user, 'username', 'Unknown')} disconnected from room")
-    
+
     async def receive(self, text_data):
         try:
             data = json.loads(text_data)
@@ -86,6 +95,46 @@ class ChatConsumer(AsyncWebsocketConsumer):
             'timestamp': event['timestamp'],
             'uuid': event['uuid']
         })) # Send message to WebSocket
+
+    async def online_users(self, event):
+        await self.send(text_data=json.dumps({
+            'type': 'online_users',
+            'count': event['count'],
+            'users': event['users']
+        }))
+    
+    async def add_online_user(self):
+        room_key = f"online_users_{self.room.id}"
+        online_users = cache.get(room_key, set())
+        if not isinstance(online_users, set):
+            online_users = set()
+
+        online_users.add(self.user.username)
+        cache.set(room_key, online_users, timeout=None) # Store online users in cache
+
+    async def remove_online_user(self):
+        room_key = f"online_users_{self.room.id}"
+        online_users = cache.get(room_key, set())
+        if not isinstance(online_users, set):
+            online_users = set()
+
+        online_users.discard(self.user.username)
+        cache.set(room_key, online_users, timeout=None) # Update online users in cache
+
+    async def broadcast_online_users(self):
+        room_key = f"online_users_{self.room.id}"
+        online_users = cache.get(room_key, set())
+        if not isinstance(online_users, set):
+            online_users = set()
+
+        await self.channel_layer.group_send(
+            self.room_group_name,
+            {
+                'type': 'online_users',
+                'count': len(online_users),
+                'users': list(online_users)
+            }
+        )
     
     @database_sync_to_async
     def get_or_create_room(self, room_uuid):
