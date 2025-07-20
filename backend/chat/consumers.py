@@ -58,6 +58,11 @@ class ChatConsumer(AsyncWebsocketConsumer):
         try:
             data = json.loads(text_data)
             message = data.get('message', '').strip()
+            parent_id = data.get('parent_id')
+
+            parent_message = None
+            if parent_id:
+                parent_message = await database_sync_to_async(Message.objects.get)(id=parent_id)
             
             if not message:
                 return
@@ -69,7 +74,8 @@ class ChatConsumer(AsyncWebsocketConsumer):
             msg_obj = await database_sync_to_async(Message.objects.create)(
                 room=self.room,
                 content=message,
-                sender=user
+                sender=user,
+                parent=parent_message
             )
             
             await self.channel_layer.group_send(
@@ -79,7 +85,8 @@ class ChatConsumer(AsyncWebsocketConsumer):
                     'message': message,
                     'username': user.username,
                     'timestamp': str(msg_obj.timestamp),
-                    'uuid': str(msg_obj.id)
+                    'uuid': str(msg_obj.id),
+                    'parent_id': str(parent_message.id) if parent_message else None
                 }
             ) # Send message to room group
             
@@ -93,7 +100,8 @@ class ChatConsumer(AsyncWebsocketConsumer):
             'message': event['message'],
             'username': event['username'],
             'timestamp': event['timestamp'],
-            'uuid': event['uuid']
+            'uuid': event['uuid'],
+            'parent_id': event.get('parent_id')
         })) # Send message to WebSocket
 
     async def online_users(self, event):
